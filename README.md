@@ -1,4 +1,6 @@
 **Hotel Booking App**
+
+
 Install [node](https://nodejs.org/en/download/) and make sure you have node.js installed on box.
 
 *Tasks*
