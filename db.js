@@ -3,7 +3,7 @@ const { DB_Host,
   DB_User,
   DB_Password,
   DB_Name } = require("./config/index")
-  
+
 var connection = mysql.createConnection({
   host: DB_Host,
   user: DB_User,

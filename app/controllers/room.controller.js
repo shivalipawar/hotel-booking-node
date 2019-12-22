@@ -1,36 +1,40 @@
-const connection = require('../../db')
-const util  = require('../util/util')
+const util = require('../util/util')
 const { InValidRoomIdError } = require("../util/CustomError")
+const { executeQuery } = require("../util/queryExecutor")
+const { INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } = require('http-status-codes');
 
-exports.findAll = (req, res) => {
-    new Promise((resolve, reject) => {
-        connection.query("SELECT * FROM room", function (err, result) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(result)
-            }
-        });
-    }).then(result => {
+exports.findAll = (_req, res) => {
+    const promise = executeQuery("SELECT * FROM room", [])
+    promise.then(result => {
         res.send(result)
     }).catch(err => {
-        return res.status(500).send();
+        console.log(err)
+        return res.status(INTERNAL_SERVER_ERROR).send();
     })
 };
 
-exports.checkAvailability = (req,res) =>{
+exports.checkAvailability = (req, res) => {
     const dates = req.body;
-    util.isOverlapping(dates.checkIn, req.params.roomId).then(isOverlapping => {
-        if (isOverlapping) {
-            return res.status(200).send({message:"Not Available"});
+    const roomID = req.params.roomId;
+    util.isRoomValid(roomID).then((isValid) => {
+        if (!isValid) {
+            const error = new InValidRoomIdError(roomID);
+            console.log(error)
+            return res.status(BAD_REQUEST).send(error.message);
         }
-        return res.status(200).send({message:"Available"});
+        util.isOverlapping(dates.checkIn, roomID).then(isOverlapping => {
+            if (isOverlapping) {
+                return res.status(OK).send({ message: "Not Available" });
+            }
+            return res.status(OK).send({ message: "Available" });
+        }).catch(err => {
+
+            console.log(JSON.stringify(err))
+            return res.status(INTERNAL_SERVER_ERROR).send();
+        })
 
     }).catch(err => {
-        if (err instanceof InValidRoomIdError) {
-            return res.status(400).send(err.message);
-        }
         console.log(JSON.stringify(err))
-        return res.status(500).send();
+        return res.status(INTERNAL_SERVER_ERROR).send();
     })
 }

@@ -1,20 +1,21 @@
 const connection = require('../../db')
-const { InValidRoomIdError } = require("./CustomError")
+const { executeQuery } = require("../util/queryExecutor")
+
 const isOverlapping = (checkInTime, roomId) => {
     return new Promise((resolve, reject) => {
         const sqlQuery = `
-        SELECT b.room_id, x.cnt as res FROM booking as b, (SELECT count(*) as cnt
-            FROM booking
-            WHERE 
-            FROM_UNIXTIME(?) >=FROM_UNIXTIME(check_in) and FROM_UNIXTIME(?) < FROM_UNIXTIME(check_out) and room_id=?) x where b.room_id=? group by b.room_id;`
-        connection.query(sqlQuery, [checkInTime, checkInTime, roomId, roomId], function (err, result) {
+        SELECT count(*)  as res
+        FROM booking
+        WHERE 
+        FROM_UNIXTIME(?) >=FROM_UNIXTIME(check_in) and FROM_UNIXTIME(?) < FROM_UNIXTIME(check_out) and room_id=?;`
+        connection.query(sqlQuery, [checkInTime, checkInTime, roomId], function (err, result) {
             if (err) {
-                console.log(JSON.stringify)
+                console.log(JSON.stringify(err))
                 reject(err)
             } else {
                 console.log(JSON.stringify(result))
                 if (result.length === 0) {
-                    reject(new InValidRoomIdError(roomId))
+                    resolve(false)
                 } else {
                     resolve(result[0].res > 0)
                 }
@@ -23,4 +24,23 @@ const isOverlapping = (checkInTime, roomId) => {
     })
 }
 
-module.exports = { isOverlapping }
+const isRoomValid = (roomId) => {
+    const query = "SELECT true from room where id=" + roomId
+    return new Promise((resolve, reject) => {
+        executeQuery(query)
+            .then((result) => {
+                if (result.length > 0) {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            }).catch((err) => {
+                reject(err);
+            })
+    })
+}
+
+module.exports = {
+    isOverlapping,
+    isRoomValid
+}
