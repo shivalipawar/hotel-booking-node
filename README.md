@@ -14,7 +14,7 @@ This will download dependencies that belong to this appication.
  2. Update db configuration
 
 
-Install MySql database and run init.sql file to populate db. Add db configuration to .env file.
+Install MySql database and run init.sql file to populate db and add db configuration to .env file.
 
  3. Run App
 ```sh
